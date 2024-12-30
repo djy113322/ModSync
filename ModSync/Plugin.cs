@@ -136,18 +136,29 @@ public class Plugin : BaseUnityPlugin
 
     private void SkipUpdatingMods()
     {
-        var enforcedAddedFiles = EnabledSyncPaths
-            .ToDictionary(syncPath => syncPath.path, syncPath => syncPath.enforced ? addedFiles[syncPath.path] : [], StringComparer.OrdinalIgnoreCase);
+        var enforcedAddedFiles = EnabledSyncPaths.ToDictionary(
+            syncPath => syncPath.path,
+            syncPath => syncPath.enforced ? addedFiles[syncPath.path] : [],
+            StringComparer.OrdinalIgnoreCase
+        );
 
-        var enforcedUpdatedFiles = EnabledSyncPaths
-            .ToDictionary(syncPath => syncPath.path, syncPath => syncPath.enforced ? updatedFiles[syncPath.path] : [], StringComparer.OrdinalIgnoreCase);
+        var enforcedUpdatedFiles = EnabledSyncPaths.ToDictionary(
+            syncPath => syncPath.path,
+            syncPath => syncPath.enforced ? updatedFiles[syncPath.path] : [],
+            StringComparer.OrdinalIgnoreCase
+        );
 
-        var enforcedCreatedDirectories = EnabledSyncPaths
-            .ToDictionary(syncPath => syncPath.path, syncPath => syncPath.enforced ? createdDirectories[syncPath.path] : [], StringComparer.OrdinalIgnoreCase);
+        var enforcedCreatedDirectories = EnabledSyncPaths.ToDictionary(
+            syncPath => syncPath.path,
+            syncPath => syncPath.enforced ? createdDirectories[syncPath.path] : [],
+            StringComparer.OrdinalIgnoreCase
+        );
 
-        if (enforcedAddedFiles.Values.Any(files => files.Any())
+        if (
+            enforcedAddedFiles.Values.Any(files => files.Any())
             || enforcedUpdatedFiles.Values.Any(files => files.Any())
-            || enforcedCreatedDirectories.Values.Any(files => files.Any()))
+            || enforcedCreatedDirectories.Values.Any(files => files.Any())
+        )
         {
             Task.Run(() => SyncMods(enforcedAddedFiles, enforcedUpdatedFiles, enforcedCreatedDirectories));
         }
@@ -498,13 +509,12 @@ public class Plugin : BaseUnityPlugin
     private readonly UpdateWindow updateWindow = new("Installed mods do not match server", "Would you like to update?");
     private readonly ProgressWindow progressWindow = new("Downloading Updates...", "Your game will need to be restarted\nafter update completes.");
     private readonly AlertWindow restartWindow = new(new Vector2(480f, 200f), "Update Complete.", "Please restart your game to continue.");
-    private readonly AlertWindow downloadErrorWindow =
-        new(
-            new Vector2(640f, 240f),
-            "Download failed!",
-            "There was an error updating mod files.\nPlease check BepInEx/LogOutput.log for more information.",
-            "QUIT"
-        );
+    private readonly AlertWindow downloadErrorWindow = new(
+        new Vector2(640f, 240f),
+        "Download failed!",
+        "There was an error updating mod files.\nPlease check BepInEx/LogOutput.log for more information.",
+        "QUIT"
+    );
 
     private void Awake()
     {

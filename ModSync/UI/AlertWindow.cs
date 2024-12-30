@@ -56,13 +56,12 @@ internal class AlertButton(string text) : Bordered
     {
         var borderRect = GUILayoutUtility.GetRect(size.x, size.y);
 
-        Rect buttonRect =
-            new(
-                borderRect.x + borderThickness,
-                borderRect.y + borderThickness,
-                borderRect.width - 2 * borderThickness,
-                borderRect.height - 2 * borderThickness
-            );
+        Rect buttonRect = new(
+            borderRect.x + borderThickness,
+            borderRect.y + borderThickness,
+            borderRect.width - 2 * borderThickness,
+            borderRect.height - 2 * borderThickness
+        );
 
         var hovered = buttonRect.Contains(Event.current.mousePosition);
 
@@ -71,11 +70,10 @@ internal class AlertButton(string text) : Bordered
         if (active && Event.current.type == EventType.MouseUp)
             active = false;
 
-        var buttonColor = active
-            ? Colors.Grey
-            : hovered
-                ? Colors.PrimaryLight
-                : Colors.Primary;
+        var buttonColor =
+            active ? Colors.Grey
+            : hovered ? Colors.PrimaryLight
+            : Colors.Primary;
         var textColor = active ? Colors.Dark : Colors.White;
 
         DrawBorder(borderRect, borderThickness, Colors.PrimaryDark);
@@ -88,7 +86,7 @@ internal class AlertButton(string text) : Bordered
                 fontSize = 20,
                 fontStyle = FontStyle.Bold,
                 alignment = TextAnchor.MiddleCenter,
-                normal = { textColor = textColor }
+                normal = { textColor = textColor },
             }
         );
     }

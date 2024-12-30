@@ -29,8 +29,14 @@ public class UpdateWindow(string title, string message, string continueText = "C
 internal class UpdateBox(string title, string message, string continueText, string cancelText) : Bordered
 {
     private readonly UpdateButton acceptButton = new(continueText, Colors.Primary, Colors.PrimaryLight, Colors.Grey, Colors.PrimaryDark);
-    private readonly UpdateButton declineButton =
-        new(cancelText, Colors.Secondary, Colors.SecondaryLight, Colors.Grey, Colors.SecondaryDark, "Enforced updates will still be downloaded.");
+    private readonly UpdateButton declineButton = new(
+        cancelText,
+        Colors.Secondary,
+        Colors.SecondaryLight,
+        Colors.Grey,
+        Colors.SecondaryDark,
+        "Enforced updates will still be downloaded."
+    );
 
     private readonly UpdateButtonTooltip updateButtonTooltip = new();
 
@@ -42,13 +48,12 @@ internal class UpdateBox(string title, string message, string continueText, stri
         var borderRect = GUILayoutUtility.GetRect(size.x, size.y);
         DrawBorder(borderRect, borderThickness, Colors.Grey);
 
-        Rect alertRect =
-            new(
-                borderRect.x + borderThickness,
-                borderRect.y + borderThickness,
-                borderRect.width - 2 * borderThickness,
-                borderRect.height - 2 * borderThickness
-            );
+        Rect alertRect = new(
+            borderRect.x + borderThickness,
+            borderRect.y + borderThickness,
+            borderRect.width - 2 * borderThickness,
+            borderRect.height - 2 * borderThickness
+        );
 
         GUI.DrawTexture(alertRect, Utility.GetTexture(Colors.Dark.SetAlpha(0.5f)), ScaleMode.StretchToFill, true, 0);
 
@@ -56,31 +61,28 @@ internal class UpdateBox(string title, string message, string continueText, stri
         Rect scrollRect = new(alertRect.x, alertRect.y + 96f, alertRect.width, alertRect.height - 96f - 48f);
         Rect actionsRect = new(alertRect.x, alertRect.y + alertRect.height - 48f, alertRect.width, 48f);
 
-        GUIStyle titleStyle =
-            new()
-            {
-                alignment = TextAnchor.LowerCenter,
-                fontSize = 28,
-                fontStyle = FontStyle.Bold,
-                normal = { textColor = Colors.White }
-            };
+        GUIStyle titleStyle = new()
+        {
+            alignment = TextAnchor.LowerCenter,
+            fontSize = 28,
+            fontStyle = FontStyle.Bold,
+            normal = { textColor = Colors.White },
+        };
 
-        GUIStyle messageStyle =
-            new()
-            {
-                alignment = TextAnchor.MiddleCenter,
-                fontSize = 16,
-                fontStyle = FontStyle.Bold,
-                normal = { textColor = Colors.White }
-            };
+        GUIStyle messageStyle = new()
+        {
+            alignment = TextAnchor.MiddleCenter,
+            fontSize = 16,
+            fontStyle = FontStyle.Bold,
+            normal = { textColor = Colors.White },
+        };
 
-        GUIStyle scrollStyle =
-            new()
-            {
-                alignment = TextAnchor.UpperLeft,
-                fontSize = 16,
-                normal = { textColor = Colors.White }
-            };
+        GUIStyle scrollStyle = new()
+        {
+            alignment = TextAnchor.UpperLeft,
+            fontSize = 16,
+            normal = { textColor = Colors.White },
+        };
 
         Rect titleRect = new(infoRect.x, infoRect.y, infoRect.width, infoRect.height / 2);
         GUI.Label(titleRect, title, titleStyle);
@@ -88,22 +90,20 @@ internal class UpdateBox(string title, string message, string continueText, stri
         Rect messageRect = new(infoRect.x, infoRect.y + infoRect.height / 2f, infoRect.width, infoRect.height / 2);
         GUI.Label(messageRect, message, messageStyle);
 
-        GUIStyle scrollbarStyle =
-            new(GUI.skin.verticalScrollbar)
-            {
-                normal = { background = Utility.GetTexture(Colors.Grey.SetAlpha(0.2f)) },
-                active = { background = Utility.GetTexture(Colors.Grey.SetAlpha(0.2f)) },
-                hover = { background = Utility.GetTexture(Colors.Grey.SetAlpha(0.2f)) },
-                focused = { background = Utility.GetTexture(Colors.Grey.SetAlpha(0.2f)) },
-            };
-        GUIStyle scrollbarThumbStyle =
-            new(GUI.skin.verticalScrollbarThumb)
-            {
-                normal = { background = Utility.GetTexture(Colors.Primary.SetAlpha(0.66f)) },
-                active = { background = Utility.GetTexture(Colors.Primary.SetAlpha(0.5f)) },
-                hover = { background = Utility.GetTexture(Colors.Primary.SetAlpha(0.66f)) },
-                focused = { background = Utility.GetTexture(Colors.Primary.SetAlpha(0.5f)) },
-            };
+        GUIStyle scrollbarStyle = new(GUI.skin.verticalScrollbar)
+        {
+            normal = { background = Utility.GetTexture(Colors.Grey.SetAlpha(0.2f)) },
+            active = { background = Utility.GetTexture(Colors.Grey.SetAlpha(0.2f)) },
+            hover = { background = Utility.GetTexture(Colors.Grey.SetAlpha(0.2f)) },
+            focused = { background = Utility.GetTexture(Colors.Grey.SetAlpha(0.2f)) },
+        };
+        GUIStyle scrollbarThumbStyle = new(GUI.skin.verticalScrollbarThumb)
+        {
+            normal = { background = Utility.GetTexture(Colors.Primary.SetAlpha(0.66f)) },
+            active = { background = Utility.GetTexture(Colors.Primary.SetAlpha(0.5f)) },
+            hover = { background = Utility.GetTexture(Colors.Primary.SetAlpha(0.66f)) },
+            focused = { background = Utility.GetTexture(Colors.Primary.SetAlpha(0.5f)) },
+        };
 
         var scrollHeight = scrollStyle.CalcHeight(new GUIContent(updatesText), alertRect.width - 40f);
         GUI.DrawTexture(scrollRect, Utility.GetTexture(Color.black.SetAlpha(0.5f)), ScaleMode.StretchToFill, true, 0);
@@ -151,13 +151,12 @@ internal class UpdateButton(string text, Color normalColor, Color hoverColor, Co
 
     public bool Draw(Rect borderRect)
     {
-        Rect buttonRect =
-            new(
-                borderRect.x + borderThickness,
-                borderRect.y + borderThickness,
-                borderRect.width - 2 * borderThickness,
-                borderRect.height - 2 * borderThickness
-            );
+        Rect buttonRect = new(
+            borderRect.x + borderThickness,
+            borderRect.y + borderThickness,
+            borderRect.width - 2 * borderThickness,
+            borderRect.height - 2 * borderThickness
+        );
 
         var hovered = buttonRect.Contains(Event.current.mousePosition);
 
@@ -166,11 +165,10 @@ internal class UpdateButton(string text, Color normalColor, Color hoverColor, Co
         if (active && Event.current.type == EventType.MouseUp)
             active = false;
 
-        var buttonColor = active
-            ? activeColor
-            : hovered
-                ? hoverColor
-                : normalColor;
+        var buttonColor =
+            active ? activeColor
+            : hovered ? hoverColor
+            : normalColor;
         var textColor = active ? Colors.Dark : Colors.White;
 
         DrawBorder(borderRect, borderThickness, borderColor);
@@ -184,7 +182,7 @@ internal class UpdateButton(string text, Color normalColor, Color hoverColor, Co
                 fontSize = 20,
                 fontStyle = FontStyle.Bold,
                 alignment = TextAnchor.MiddleCenter,
-                normal = { textColor = textColor }
+                normal = { textColor = textColor },
             }
         );
     }
@@ -218,7 +216,7 @@ internal class UpdateButtonTooltip : Bordered
             {
                 fontSize = 14,
                 alignment = TextAnchor.MiddleLeft,
-                normal = { textColor = Colors.White }
+                normal = { textColor = Colors.White },
             }
         );
     }
