@@ -53,7 +53,9 @@ public class Server(Version pluginVersion)
                 using var responseStream = await client.GetStreamAsync($"{RequestHandler.Host}/modsync/fetch/{file}");
                 using var fileStream = new FileStream(downloadPath, FileMode.Create);
 
-                await responseStream.CopyToAsync(fileStream, (int)responseStream.Length, cancellationToken);
+                if ((int)responseStream.Length > 0)
+                    await responseStream.CopyToAsync(fileStream, (int)responseStream.Length, cancellationToken);
+
                 limiter.Release();
                 return;
             }
