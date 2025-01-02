@@ -463,7 +463,7 @@ public class HashLocalFilesTests
         { @"plugins\OtherMod\subdir\.nosync", "" },
     };
 
-    private string testDirectory;
+    private string testDirectory = string.Empty;
 
     [SetUp]
     public void Setup()
@@ -575,7 +575,7 @@ public class CreateModFileTest
         { @"OtherMod\subdir\.nosync", "" },
     };
 
-    private string testDirectory;
+    private string testDirectory = string.Empty;
     private readonly SemaphoreSlim limiter = new(1024);
 
     [SetUp]
@@ -657,7 +657,7 @@ public class IsExcludedTest
         Glob.Create(@"OtherMod\subdir"),
     ];
 
-    private string testDirectory;
+    private string testDirectory = string.Empty;
 
     [SetUp]
     public void Setup()
