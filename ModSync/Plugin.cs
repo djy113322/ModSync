@@ -370,21 +370,32 @@ public class Plugin : BaseUnityPlugin
         new Migrator(Directory.GetCurrentDirectory()).TryMigrate(Info.Metadata.Version, syncPaths);
 
         Logger.LogDebug("Loading syncPath configs");
-        configSyncPathToggles = syncPaths
-            .Select(syncPath => new KeyValuePair<string, ConfigEntry<bool>>(
-                syncPath.path,
-                Config.Bind(
-                    "Synced Paths",
-                    syncPath.name.Replace("\\", "/"),
-                    syncPath.enabled,
-                    new ConfigDescription(
-                        $"Should the mod attempt to sync files from {syncPath}",
-                        null,
-                        new ConfigurationManagerAttributes { ReadOnly = syncPath.enforced }
+
+        try
+        {
+            configSyncPathToggles = syncPaths
+                .Select(syncPath => new KeyValuePair<string, ConfigEntry<bool>>(
+                    syncPath.path,
+                    Config.Bind(
+                        "Synced Paths",
+                        syncPath.name.Replace("\\", "/"),
+                        syncPath.enabled,
+                        new ConfigDescription(
+                            $"Should the mod attempt to sync files from {syncPath.path.Replace("\\", "/")}",
+                            null,
+                            new ConfigurationManagerAttributes { ReadOnly = syncPath.enforced }
+                        )
                     )
-                )
-            ))
-            .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+                ))
+                .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+        }
+        catch (Exception e)
+        {
+            Logger.LogError($"Error binding sync path configs. This is likely a bug with ModSync. Please report it in the FIKA discord.\n{e}");
+            Chainloader.DependencyErrors.Add(
+                $"Could not load {Info.Metadata.Name} due to error binding sync path configs. Please check your server configuration and try again."
+            );
+        }
 
         Logger.LogDebug("Loading previous sync data");
         try
