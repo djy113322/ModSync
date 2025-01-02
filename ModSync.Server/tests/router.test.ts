@@ -1,5 +1,6 @@
 ﻿import { expect, beforeEach, describe, it, vi, beforeAll } from "vitest";
 import { fs, vol } from "memfs";
+import packageJson from "../package.json";
 
 import { Router } from "../src/router";
 import { Config } from "../src/config";
@@ -29,6 +30,7 @@ describe("router", async () => {
 	const config = new Config(
 		[
 			{
+				name: "plugins",
 				path: "plugins",
 				enabled: true,
 				enforced: false,
@@ -36,6 +38,7 @@ describe("router", async () => {
 				restartRequired: true,
 			},
 			{
+				name: "user/mods",
 				path: "user/mods",
 				enabled: true,
 				enforced: false,
@@ -43,6 +46,7 @@ describe("router", async () => {
 				restartRequired: false,
 			},
 			{
+				name: "user/cache",
 				path: "user/cache",
 				enabled: false,
 				enforced: false,
@@ -80,7 +84,7 @@ describe("router", async () => {
 
 	describe("getServerVersion", () => {
 		let req = mock<IncomingMessage>({
-			headers: { "modsync-version": "0.9.0" },
+			headers: { "modsync-version": packageJson.version },
 		});
 		let res = mock<ServerResponse>();
 
@@ -88,7 +92,7 @@ describe("router", async () => {
 			vol.reset();
 			vol.fromNestedJSON({ "package.json": '{ "version": "1.0.0" }' });
 
-			req = mock<IncomingMessage>({ headers: { "modsync-version": "0.9.0" } });
+			req = mock<IncomingMessage>({ headers: { "modsync-version": packageJson.version } });
 			res = mock<ServerResponse>();
 		});
 
@@ -106,12 +110,12 @@ describe("router", async () => {
 
 	describe("getSyncPaths", () => {
 		let req = mock<IncomingMessage>({
-			headers: { "modsync-version": "0.9.0" },
+			headers: { "modsync-version": packageJson.version },
 		});
 		let res = mock<ServerResponse>();
 
 		beforeEach(() => {
-			req = mock<IncomingMessage>({ headers: { "modsync-version": "0.9.0" } });
+			req = mock<IncomingMessage>({ headers: { "modsync-version": packageJson.version } });
 			res = mock<ServerResponse>();
 		});
 
@@ -142,11 +146,11 @@ describe("router", async () => {
 
 	describe("getExclusions", () => {
 		let req = mock<IncomingMessage>({
-			headers: { "modsync-version": "0.9.0" },
+			headers: { "modsync-version": packageJson.version },
 		});
 		let res = mock<ServerResponse>();
 		beforeEach(() => {
-			req = mock<IncomingMessage>({ headers: { "modsync-version": "0.9.0" } });
+			req = mock<IncomingMessage>({ headers: { "modsync-version": packageJson.version } });
 			res = mock<ServerResponse>();
 		});
 
@@ -188,14 +192,14 @@ describe("router", async () => {
 		};
 
 		let req = mock<IncomingMessage>({
-			headers: { "modsync-version": "0.9.0" },
+			headers: { "modsync-version": packageJson.version },
 		});
 		let res = mock<ServerResponse>();
 		beforeEach(() => {
 			vol.reset();
 			vol.fromNestedJSON(directoryStructure);
 
-			req = mock<IncomingMessage>({ headers: { "modsync-version": "0.9.0" } });
+			req = mock<IncomingMessage>({ headers: { "modsync-version": packageJson.version } });
 			res = mock<ServerResponse>();
 		});
 
@@ -250,7 +254,7 @@ describe("router", async () => {
 		};
 
 		let req = mock<IncomingMessage>({
-			headers: { "modsync-version": "0.9.0" },
+			headers: { "modsync-version": packageJson.version },
 		});
 		let res = mock<ServerResponse>();
 
@@ -259,7 +263,7 @@ describe("router", async () => {
 			vol.fromNestedJSON(directoryStructure);
 			httpFileUtil.sendFileAsync.mockClear();
 
-			req = mock<IncomingMessage>({ headers: { "modsync-version": "0.9.0" } });
+			req = mock<IncomingMessage>({ headers: { "modsync-version": packageJson.version } });
 			res = mock<ServerResponse>();
 		});
 

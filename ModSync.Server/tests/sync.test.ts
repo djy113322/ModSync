@@ -9,15 +9,19 @@ import type { ILogger } from "@spt/models/spt/utils/ILogger";
 import { mock } from "vitest-mock-extended";
 
 vi.mock("node:fs", async () => {
-	const { readFileSync } = await vi.importActual<typeof import("node:fs")>("node:fs");
+	const { readFileSync } =
+		await vi.importActual<typeof import("node:fs")>("node:fs");
 	const { fs } = await vi.importActual<typeof import("memfs")>("memfs");
 
 	return {
 		...fs,
-		readFileSync: vi.fn((path, options) => path.endsWith(".wasm") ? readFileSync("../ModSync.MetroHash/pkg/metrohash_bg.wasm") : fs.readFileSync(path, options)),
-	}
+		readFileSync: vi.fn((path, options) =>
+			path.endsWith(".wasm")
+				? readFileSync("../ModSync.MetroHash/pkg/metrohash_bg.wasm")
+				: fs.readFileSync(path, options),
+		),
+	};
 });
-
 
 describe("syncTests", async () => {
 	const directoryStructure = {
@@ -29,7 +33,7 @@ describe("syncTests", async () => {
 			"file3.dll.nosync.txt": "",
 			ModName: {
 				IncludedSubdir: {
-					"aFileToInclude": "Something",
+					aFileToInclude: "Something",
 				},
 				"mod_name.dll": "Test content 4",
 				".nosync": "",
@@ -57,6 +61,7 @@ describe("syncTests", async () => {
 	const config = new Config(
 		[
 			{
+				name: "plugins",
 				path: "plugins",
 				enabled: true,
 				enforced: false,
@@ -89,9 +94,7 @@ describe("syncTests", async () => {
 		it("should hash mod files", async () => {
 			const hashes = await syncUtil.hashModFiles(config.syncPaths);
 
-			expect("plugins\\OtherMod\\other_mod.dll" in hashes.plugins).toBe(
-				true,
-			);
+			expect("plugins\\OtherMod\\other_mod.dll" in hashes.plugins).toBe(true);
 
 			expect(hashes).toMatchSnapshot();
 		});
@@ -100,6 +103,7 @@ describe("syncTests", async () => {
 			const newConfig = new Config(
 				[
 					{
+						name: "plugins",
 						path: "plugins",
 						enabled: true,
 						enforced: false,
@@ -107,6 +111,7 @@ describe("syncTests", async () => {
 						restartRequired: true,
 					},
 					{
+						name: "user/mods",
 						path: "user/mods",
 						enabled: true,
 						enforced: false,
@@ -129,6 +134,7 @@ describe("syncTests", async () => {
 			const newConfig = new Config(
 				[
 					{
+						name: "plugins/OtherMod",
 						path: "plugins/OtherMod",
 						enabled: true,
 						enforced: false,
@@ -136,6 +142,7 @@ describe("syncTests", async () => {
 						restartRequired: true,
 					},
 					{
+						name: "plugins",
 						path: "plugins",
 						enabled: true,
 						enforced: false,
@@ -150,14 +157,19 @@ describe("syncTests", async () => {
 
 			const hashes = await syncUtil.hashModFiles(newConfig.syncPaths);
 
-			expect(hashes["plugins\\OtherMod"]).toHaveProperty("plugins\\OtherMod\\other_mod.dll");
-			expect(hashes.plugins).not.toHaveProperty("plugins\\OtherMod\\other_mod.dll");
+			expect(hashes["plugins\\OtherMod"]).toHaveProperty(
+				"plugins\\OtherMod\\other_mod.dll",
+			);
+			expect(hashes.plugins).not.toHaveProperty(
+				"plugins\\OtherMod\\other_mod.dll",
+			);
 		});
 
 		it("should correctly ignore folders that do not exist", async () => {
 			const newConfig = new Config(
 				[
 					{
+						name: "plugins",
 						path: "plugins",
 						enabled: true,
 						enforced: false,
@@ -165,6 +177,7 @@ describe("syncTests", async () => {
 						restartRequired: true,
 					},
 					{
+						name: "user/bananas",
 						path: "user/bananas",
 						enabled: true,
 						enforced: false,
@@ -192,6 +205,7 @@ describe("syncTests", async () => {
 			const newConfig = new Config(
 				[
 					{
+						name: "plugins",
 						path: "plugins",
 						enabled: true,
 						enforced: false,
@@ -199,6 +213,7 @@ describe("syncTests", async () => {
 						restartRequired: true,
 					},
 					{
+						name: "user/bananas",
 						path: "user/bananas",
 						enabled: true,
 						enforced: false,
@@ -239,13 +254,10 @@ describe("syncTests", async () => {
 		});
 
 		it("should correctly ignore folders with all files excluded", async () => {
-			const newConfig = new Config(
-				config.syncPaths,
-				[
-					...config.exclusions,
-					"plugins/OtherMod/*",
-				]
-			);
+			const newConfig = new Config(config.syncPaths, [
+				...config.exclusions,
+				"plugins/OtherMod/*",
+			]);
 
 			const syncUtil = new SyncUtil(vfs as IVFS, newConfig, logger);
 
@@ -259,6 +271,7 @@ describe("syncTests", async () => {
 				{
 					enabled: true,
 					enforced: false,
+					name: "plugins/file1.dll",
 					path: "plugins/file1.dll",
 					restartRequired: true,
 					silent: false,
@@ -273,6 +286,7 @@ describe("syncTests", async () => {
 				{
 					enabled: true,
 					enforced: false,
+					name: "plugins/file1.dll",
 					path: "plugins/file1.dll",
 					restartRequired: true,
 					silent: false,
@@ -280,13 +294,18 @@ describe("syncTests", async () => {
 				{
 					enabled: true,
 					enforced: false,
+					name: "plugins/",
 					path: "plugins/",
 					restartRequired: true,
 					silent: false,
 				},
 			]);
 
-			expect(Object.values(hashes).flatMap(Object.keys).filter((path) => path === "plugins\\file1.dll").length).toBe(1);
+			expect(
+				Object.values(hashes)
+					.flatMap(Object.keys)
+					.filter((path) => path === "plugins\\file1.dll").length,
+			).toBe(1);
 			expect(hashes).toMatchSnapshot();
 		});
 
@@ -295,21 +314,23 @@ describe("syncTests", async () => {
 				[
 					...config.syncPaths,
 					{
+						name: "plugins/ModName/IncludedSubdir",
 						path: "plugins/ModName/IncludedSubdir",
 						enabled: true,
 						enforced: false,
 						silent: false,
 						restartRequired: true,
-					}
+					},
 				],
 				config.exclusions,
-			)
+			);
 
 			const syncUtil = new SyncUtil(vfs as IVFS, newConfig, logger);
 			const hashes = await syncUtil.hashModFiles(newConfig.syncPaths);
 
-
-			expect(hashes["plugins\\ModName\\IncludedSubdir"]).toHaveProperty("plugins\\ModName\\IncludedSubdir\\aFileToInclude");
+			expect(hashes["plugins\\ModName\\IncludedSubdir"]).toHaveProperty(
+				"plugins\\ModName\\IncludedSubdir\\aFileToInclude",
+			);
 			expect(hashes).toMatchSnapshot();
 		});
 	});

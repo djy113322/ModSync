@@ -1,4 +1,5 @@
-﻿import { defineConfig } from "vitest/config";
+﻿// @ts-expect-error - something, something commonjs
+import { defineConfig } from "vitest/config";
 
 export default defineConfig({
 	test: {

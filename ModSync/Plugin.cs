@@ -375,7 +375,7 @@ public class Plugin : BaseUnityPlugin
                 syncPath.path,
                 Config.Bind(
                     "Synced Paths",
-                    syncPath.path.Replace("\\", "/"),
+                    syncPath.name.Replace("\\", "/"),
                     syncPath.enabled,
                     new ConfigDescription(
                         $"Should the mod attempt to sync files from {syncPath}",

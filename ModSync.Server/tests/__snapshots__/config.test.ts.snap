@@ -5,6 +5,7 @@ exports[`ConfigUtil > Should always include ModSync.Updater.exe in syncPaths 1`]
   {
     "enabled": true,
     "enforced": true,
+    "name": "[Required] ModSync Updater",
     "path": "ModSync.Updater.exe",
     "restartRequired": false,
     "silent": true,
@@ -12,6 +13,7 @@ exports[`ConfigUtil > Should always include ModSync.Updater.exe in syncPaths 1`]
   {
     "enabled": true,
     "enforced": true,
+    "name": "[Required] ModSync Plugin",
     "path": "BepInEx/plugins/Corter-ModSync.dll",
     "restartRequired": true,
     "silent": true,
@@ -24,6 +26,7 @@ exports[`ConfigUtil > should load config 1`] = `
   {
     "enabled": true,
     "enforced": true,
+    "name": "[Required] ModSync Updater",
     "path": "ModSync.Updater.exe",
     "restartRequired": false,
     "silent": true,
@@ -31,6 +34,7 @@ exports[`ConfigUtil > should load config 1`] = `
   {
     "enabled": true,
     "enforced": true,
+    "name": "[Required] ModSync Plugin",
     "path": "BepInEx/plugins/Corter-ModSync.dll",
     "restartRequired": true,
     "silent": true,
@@ -38,6 +42,7 @@ exports[`ConfigUtil > should load config 1`] = `
   {
     "enabled": true,
     "enforced": false,
+    "name": "doesnotexist",
     "path": "doesnotexist",
     "restartRequired": true,
     "silent": false,
@@ -45,6 +50,7 @@ exports[`ConfigUtil > should load config 1`] = `
   {
     "enabled": true,
     "enforced": false,
+    "name": "plugins",
     "path": "plugins",
     "restartRequired": true,
     "silent": false,
@@ -52,6 +58,7 @@ exports[`ConfigUtil > should load config 1`] = `
   {
     "enabled": false,
     "enforced": false,
+    "name": "mods",
     "path": "mods",
     "restartRequired": true,
     "silent": false,

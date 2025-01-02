@@ -7,6 +7,7 @@ import { unixPath } from "./utility/misc";
 import type { ILogger } from "@spt/models/spt/utils/ILogger";
 
 export type SyncPath = {
+	name?: string;
 	path: string;
 	enabled?: boolean;
 	enforced?: boolean;
@@ -26,6 +27,7 @@ const DEFAULT_CONFIG = `{
 		"BepInEx/config",
 		{
 			"enabled": false,
+			"name": "[Optional] Server mods",
 			"path": "user/mods",
 			"restartRequired": false
 		}
@@ -80,10 +82,7 @@ export class Config {
 	}
 
 	public isExcluded(filePath: string): boolean {
-		return this._globs.some(
-			(glob) =>
-				glob.test(unixPath(filePath)),
-		);
+		return this._globs.some((glob) => glob.test(unixPath(filePath)));
 	}
 }
 export class ConfigUtil {
@@ -92,7 +91,7 @@ export class ConfigUtil {
 		private jsonUtil: JsonUtil,
 		private modImporter: PreSptModLoader,
 		private logger: ILogger,
-	) { }
+	) {}
 
 	/**
 	 * @throws {Error} If the config file does not exist
@@ -125,9 +124,18 @@ export class ConfigUtil {
 				"Corter-ModSync: config.jsonc 'exclusions' is not an array. Please verify your config is correct and try again.",
 			);
 
-
 		const uniquePaths = new Set();
 		for (const syncPath of config.syncPaths) {
+			if (
+				typeof syncPath === "object" &&
+				typeof syncPath.name !== "undefined" &&
+				typeof syncPath.name !== "string"
+			) {
+				throw new Error(
+					"Corter-ModSync: config.jsonc 'syncPaths.name' must be a string. Please verify your config is correct and try again.",
+				);
+			}
+
 			if (typeof syncPath !== "string" && !("path" in syncPath))
 				throw new Error(
 					"Corter-ModSync: config.jsonc 'syncPaths' is missing 'path'. Please verify your config is correct and try again.",
@@ -157,14 +165,21 @@ export class ConfigUtil {
 					`Corter-ModSync: SyncPaths must within SPT server root. Invalid path '${syncPath}'`,
 				);
 
-			if (uniquePaths.has(typeof syncPath === "string" ? syncPath : syncPath.path))
+			if (
+				uniquePaths.has(typeof syncPath === "string" ? syncPath : syncPath.path)
+			)
 				throw new Error(
 					`Corter-ModSync: SyncPaths must be unique. Duplicate path '${syncPath}'`,
-				)
+				);
 
-			if (config.exclusions.includes(typeof syncPath === "string" ? syncPath : syncPath.path))
+			if (
+				config.exclusions.includes(
+					typeof syncPath === "string" ? syncPath : syncPath.path,
+				)
+			)
 				throw new Error(
-					`Corter-ModSync: '${syncPath}' has been added as a sync path and is also in the 'exclusions' array. This probably isn't doing what you want. If you no longer want to sync this path, remove it from the 'exclusions' and 'syncPaths' arrays.`)
+					`Corter-ModSync: '${syncPath}' has been added as a sync path and is also in the 'exclusions' array. This probably isn't doing what you want. If you no longer want to sync this path, remove it from the 'exclusions' and 'syncPaths' arrays.`,
+				);
 		}
 	}
 
@@ -180,6 +195,7 @@ export class ConfigUtil {
 					silent: true,
 					restartRequired: false,
 					path: "ModSync.Updater.exe",
+					name: "[Required] ModSync Updater",
 				},
 				{
 					enabled: true,
@@ -187,6 +203,7 @@ export class ConfigUtil {
 					silent: true,
 					restartRequired: true,
 					path: "BepInEx/plugins/Corter-ModSync.dll",
+					name: "[Required] ModSync Plugin",
 				},
 				...rawConfig.syncPaths
 					.map((syncPath) => ({
@@ -194,6 +211,7 @@ export class ConfigUtil {
 						enforced: false,
 						silent: false,
 						restartRequired: true,
+						name: typeof syncPath === "string" ? syncPath : syncPath.path,
 						...(typeof syncPath === "string" ? { path: syncPath } : syncPath),
 					}))
 					.sort((a, b) => b.path.length - a.path.length),

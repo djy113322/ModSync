@@ -32,6 +32,7 @@ describe("Config", () => {
 		config = new Config(
 			[
 				{
+					name: "plugins",
 					path: "plugins",
 					enabled: true,
 					enforced: false,
@@ -39,6 +40,7 @@ describe("Config", () => {
 					restartRequired: true,
 				},
 				{
+					name: "mods",
 					path: "mods",
 					enabled: false,
 					enforced: false,

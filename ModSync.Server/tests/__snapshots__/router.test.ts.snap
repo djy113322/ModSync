@@ -27,7 +27,7 @@ exports[`router > getHashes > should serve 'rescue' mode hashes when no version 
 exports[`router > getSyncPaths > should return sync paths 1`] = `
 [
   [
-    "[{"path":"plugins","enabled":true,"enforced":false,"silent":false,"restartRequired":true},{"path":"user\\\\mods","enabled":true,"enforced":false,"silent":false,"restartRequired":false},{"path":"user\\\\cache","enabled":false,"enforced":false,"silent":false,"restartRequired":true}]",
+    "[{"path":"plugins","name":"plugins","enabled":true,"enforced":false,"silent":false,"restartRequired":true},{"path":"user\\\\mods","name":"user/mods","enabled":true,"enforced":false,"silent":false,"restartRequired":false},{"path":"user\\\\cache","name":"user/cache","enabled":false,"enforced":false,"silent":false,"restartRequired":true}]",
   ],
 ]
 `;
