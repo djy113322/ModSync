@@ -74,6 +74,10 @@ exports[`ConfigUtil > should reject non-array syncPaths 1`] = `[Error: Corter-Mo
 
 exports[`ConfigUtil > should reject on non-array exclusions 1`] = `[Error: Corter-ModSync: config.jsonc 'exclusions' is not an array. Please verify your config is correct and try again.]`;
 
+exports[`ConfigUtil > should reject on non-string syncPath name 1`] = `[Error: Corter-ModSync: config.jsonc 'syncPaths.name' must be a string. Please verify your config is correct and try again.]`;
+
+exports[`ConfigUtil > should reject on syncPath name with invalid characters 1`] = `[JSONError: Bad control character in string literal in JSON at position 69 (line 3 column 48) while parsing '{					"syncPaths": [						{ "path": "p']`;
+
 exports[`ConfigUtil > should reject paths outside of SPT root 1`] = `[Error: Corter-ModSync: SyncPaths must within SPT server root. Invalid path '../../etc/shadow']`;
 
 exports[`ConfigUtil > should reject syncPath object without path 1`] = `[Error: Corter-ModSync: config.jsonc 'syncPaths' is missing 'path'. Please verify your config is correct and try again.]`;

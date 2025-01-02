@@ -246,6 +246,58 @@ describe("ConfigUtil", () => {
 		expect(configUtil.load()).rejects.toThrowErrorMatchingSnapshot();
 	});
 
+	it("should reject on non-string syncPath name", () => {
+		vol.fromNestedJSON(
+			{
+				"config.jsonc": `{
+					"syncPaths": [
+						{ "path": "plugins", "name": 1 }
+					],
+					// Exclusions for commonly used SPT mods
+					"exclusions": [
+						"plugins/**/node_modules"
+					]
+				}`,
+			},
+			process.cwd(),
+		);
+
+		const configUtil = new ConfigUtil(
+			new VFS() as IVFS,
+			new JsonUtil() as IJsonUtil,
+			new PreSptModLoader() as IPreSptModLoader,
+			mock<ILogger>(),
+		);	
+
+		expect(configUtil.load()).rejects.toThrowErrorMatchingSnapshot();
+	});
+
+	it("should reject on syncPath name with invalid characters", () => {
+		vol.fromNestedJSON(
+			{
+				"config.jsonc": `{
+					"syncPaths": [
+						{ "path": "plugins", "name": "[something]\t'test'" }
+					],
+					// Exclusions for commonly used SPT mods
+					"exclusions": [
+						"plugins/**/node_modules"
+					]
+				}`,
+			},
+			process.cwd(),
+		);
+
+		const configUtil = new ConfigUtil(
+			new VFS() as IVFS,
+			new JsonUtil() as IJsonUtil,
+			new PreSptModLoader() as IPreSptModLoader,
+			mock<ILogger>(),
+		);
+
+		expect(configUtil.load()).rejects.toThrowErrorMatchingSnapshot();
+	});
+
 	it("should warn on explicitly excluded syncPaths", () => {
 		vol.fromNestedJSON(
 			{

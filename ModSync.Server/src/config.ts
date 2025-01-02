@@ -27,7 +27,7 @@ const DEFAULT_CONFIG = `{
 		"BepInEx/config",
 		{
 			"enabled": false,
-			"name": "[Optional] Server mods",
+			"name": "(Optional) Server mods",
 			"path": "user/mods",
 			"restartRequired": false
 		}
@@ -136,6 +136,16 @@ export class ConfigUtil {
 				);
 			}
 
+			if (
+				typeof syncPath === "object" &&
+				typeof syncPath.name === "string" &&
+				/[\n\t\\"'\[\]]/.test(syncPath.name)
+			) {
+				throw new Error(
+					`Corter-ModSync: config.jsonc 'syncPaths.name' contains invalid characters. Please make sure your name does not include any of the following characters: \n \t \\ " ' [ ]`,
+				);
+			}
+
 			if (typeof syncPath !== "string" && !("path" in syncPath))
 				throw new Error(
 					"Corter-ModSync: config.jsonc 'syncPaths' is missing 'path'. Please verify your config is correct and try again.",
@@ -195,7 +205,7 @@ export class ConfigUtil {
 					silent: true,
 					restartRequired: false,
 					path: "ModSync.Updater.exe",
-					name: "[Required] ModSync Updater",
+					name: "(Builtin) ModSync Updater",
 				},
 				{
 					enabled: true,
@@ -203,7 +213,7 @@ export class ConfigUtil {
 					silent: true,
 					restartRequired: true,
 					path: "BepInEx/plugins/Corter-ModSync.dll",
-					name: "[Required] ModSync Plugin",
+					name: "(Builtin) ModSync Plugin",
 				},
 				...rawConfig.syncPaths
 					.map((syncPath) => ({
