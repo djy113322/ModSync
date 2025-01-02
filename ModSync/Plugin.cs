@@ -109,6 +109,7 @@ public class Plugin : BaseUnityPlugin
     private void AnalyzeModFiles(SyncPathModFiles localModFiles)
     {
         Sync.CompareModFiles(
+            Directory.GetCurrentDirectory(),
             EnabledSyncPaths,
             localModFiles,
             remoteModFiles,

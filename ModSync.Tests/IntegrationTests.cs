@@ -43,6 +43,7 @@ public class IntegrationTests
         var localModFiles = Sync.HashLocalFiles(localPath, syncPaths, remoteExclusions, localExclusions).Result;
 
         Sync.CompareModFiles(
+            Path.Combine(testPath, "local"),
             syncPaths,
             localModFiles,
             remoteModFiles,
@@ -299,6 +300,35 @@ public class IntegrationTests
         {
             Assert.That(createdDirectories["plugins"], Has.Count.EqualTo(1));
             Assert.That(createdDirectories["plugins"][0], Is.EqualTo(@"plugins\TestMod\SuperImportantEmptyFolder"));
+        });
+    }
+
+    [Test]
+    public void TestIgnoreCreateDirectoryThatIsNotEmpty()
+    {
+        var testPath = Path.GetFullPath(
+            Path.Combine(Directory.GetCurrentDirectory(), @"..\..\..\IntegrationTests", "EmptyDirectoryOnServerButPopulatedOnClient")
+        );
+
+        Directory.CreateDirectory(Path.Combine(testPath, @"remote\plugins\EmptyDirectory"));
+
+        List<string> downloadedFiles = [];
+
+        RunPlugin(
+            testPath,
+            syncPaths: [new SyncPath("plugins")],
+            configDeleteRemovedFiles: true,
+            out _,
+            out _,
+            out _,
+            out var createdDirectories,
+            ref downloadedFiles
+        );
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(createdDirectories["plugins"], Has.Count.EqualTo(0));
+            Assert.That(createdDirectories["plugins"], Has.No.Member(@"plugins\EmptyDirectory"));
         });
     }
 

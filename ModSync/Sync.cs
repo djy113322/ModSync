@@ -85,7 +85,12 @@ public static class Sync
             .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
     }
 
-    public static SyncPathFileList GetCreatedDirectories(List<SyncPath> syncPaths, SyncPathModFiles localModFiles, SyncPathModFiles remoteModFiles)
+    public static SyncPathFileList GetCreatedDirectories(
+        string basePath,
+        List<SyncPath> syncPaths,
+        SyncPathModFiles localModFiles,
+        SyncPathModFiles remoteModFiles
+    )
     {
         return syncPaths
             .Select(syncPath =>
@@ -96,6 +101,7 @@ public static class Sync
                         .Where((kvp) => kvp.Value.directory)
                         .Select((kvp) => kvp.Key)
                         .Except(localModFiles[syncPath.path].Keys, StringComparer.OrdinalIgnoreCase)
+                        .Where((dir) => !Directory.Exists(Path.Combine(basePath, dir)))
                         .ToList()
                 );
             })
@@ -186,6 +192,7 @@ public static class Sync
     }
 
     public static void CompareModFiles(
+        string basePath,
         List<SyncPath> syncPaths,
         SyncPathModFiles localModFiles,
         SyncPathModFiles remoteModFiles,
@@ -199,7 +206,7 @@ public static class Sync
         addedFiles = GetAddedFiles(syncPaths, localModFiles, remoteModFiles);
         updatedFiles = GetUpdatedFiles(syncPaths, localModFiles, remoteModFiles, previousSync);
         removedFiles = GetRemovedFiles(syncPaths, localModFiles, remoteModFiles, previousSync);
-        createdDirectories = GetCreatedDirectories(syncPaths, localModFiles, remoteModFiles);
+        createdDirectories = GetCreatedDirectories(basePath, syncPaths, localModFiles, remoteModFiles);
     }
 
     public static bool IsExcluded(List<Regex> exclusions, string path)

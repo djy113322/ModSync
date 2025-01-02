@@ -427,7 +427,7 @@ public class CreatedDirectoriesTests
             },
         };
 
-        var createdDirectories = Sync.GetCreatedDirectories([new SyncPath(@"BepInEx\plugins", enforced: true)], localModFiles, remoteModFiles);
+        var createdDirectories = Sync.GetCreatedDirectories("", [new SyncPath(@"BepInEx\plugins", enforced: true)], localModFiles, remoteModFiles);
 
         Assert.That(
             createdDirectories[@"BepInEx\plugins"],
