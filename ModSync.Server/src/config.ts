@@ -18,6 +18,7 @@ export type SyncPath = {
 type RawConfig = {
 	syncPaths: (string | SyncPath)[];
 	exclusions: string[];
+	whiteList: string[];
 };
 
 const DEFAULT_CONFIG = `{
@@ -69,6 +70,9 @@ const DEFAULT_CONFIG = `{
 		"user/mods/**/*.js",
 		"user/mods/**/*.js.map",
 		"**/*:Zone.Identifier"
+	],
+	"whiteList": [
+		// default is empty
 	]
 }`;
 
@@ -77,6 +81,7 @@ export class Config {
 	constructor(
 		public syncPaths: Required<SyncPath>[],
 		public exclusions: string[],
+		public whiteList: string[],
 	) {
 		this._globs = exclusions.map(glob);
 	}
@@ -97,7 +102,7 @@ export class ConfigUtil {
 	 * @throws {Error} If the config file does not exist
 	 */
 	private async readConfigFile(): Promise<RawConfig> {
-		const modPath = this.modImporter.getModPath("Corter-ModSync");
+		const modPath = this.modImporter.getModPath("Corter-ModSync");		//required mod path
 		const configPath = path.join(modPath, "config.jsonc");
 
 		if (!this.vfs.exists(configPath))
@@ -227,6 +232,7 @@ export class ConfigUtil {
 					.sort((a, b) => b.path.length - a.path.length),
 			],
 			rawConfig.exclusions,
+			rawConfig.whiteList,
 		);
 	}
 }

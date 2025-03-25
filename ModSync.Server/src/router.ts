@@ -137,6 +137,16 @@ export class Router {
 		res.end(JSON.stringify(this.config.exclusions));
 	}
 
+	public async getWhiteList(
+		_req: IncomingMessage, 
+		res: ServerResponse, 
+		_: RegExpMatchArray, 
+		_params: URLSearchParams) {
+		res.setHeader("Content-Type", "application/json");
+		res.writeHead(200, "OK");
+		res.end(JSON.stringify(this.config.whiteList));
+	}
+
 	/**
 	 * @internal
 	 */
@@ -222,6 +232,10 @@ export class Router {
 			{
 				route: glob("/modsync/exclusions"),
 				handler: this.getExclusions.bind(this),
+			},
+			{
+				route: glob("/modsync/whitelist/**"),
+				handler: this.getWhiteList.bind(this),
 			},
 			{
 				route: glob("/modsync/hashes"),

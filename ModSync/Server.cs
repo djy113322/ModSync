@@ -95,6 +95,10 @@ public class Server(Version pluginVersion)
         return Json.Deserialize<List<string>>(await GetJson("/modsync/exclusions"));
     }
 
+    public async Task<List<string>> GetModWhiteList(){
+        return Json.Deserialize<List<string>>(await GetJson("/modsync/whitelist"));
+    }
+
     public async Task<SyncPathModFiles> GetRemoteModFileHashes(List<SyncPath> syncPaths)
     {
         return Json.Deserialize<SyncPathModFiles>(
