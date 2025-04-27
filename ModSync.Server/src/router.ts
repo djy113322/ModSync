@@ -9,6 +9,7 @@ import { HttpError, winPath } from "./utility/misc";
 import type { ILogger } from "@spt/models/spt/utils/ILogger";
 import type { PreSptModLoader } from "@spt/loaders/PreSptModLoader";
 import type { HttpServerHelper } from "@spt/helpers/HttpServerHelper";
+import { ProfileHelper } from "@spt/helpers/ProfileHelper";
 
 const FALLBACK_SYNCPATHS: Record<string, object> = {};
 
@@ -68,6 +69,7 @@ export class Router {
 		private httpServerHelper: HttpServerHelper,
 		private modImporter: PreSptModLoader,
 		private logger: ILogger,
+		private profileHelper?: ProfileHelper // 添加 ProfileHelper
 	) { }
 
 	/**
@@ -141,7 +143,9 @@ export class Router {
 		_req: IncomingMessage, 
 		res: ServerResponse, 
 		_: RegExpMatchArray, 
-		_params: URLSearchParams) {
+		_params: URLSearchParams,
+		sessionId: string	
+	) {
 		res.setHeader("Content-Type", "application/json");
 		res.writeHead(200, "OK");
 		res.end(JSON.stringify(this.config.whiteList));
@@ -219,7 +223,29 @@ export class Router {
 		}
 	}
 
-	public handleRequest(req: IncomingMessage, res: ServerResponse) {
+	/**
+     * 根据session获取用户档案名称
+     */
+    private async getProfileName(sessionId: string): Promise<string | null> {
+		if (this.profileHelper && sessionId)
+			{
+				try
+				{
+					const profile = this.profileHelper.getPmcProfile(sessionId);
+					if(profile)
+					{
+						// const profileId = profile.aid || profile._id;
+						const profileNam = profile.Info.Nickname;
+						return profileNam;
+					}
+				} catch(error) {
+					this.logger.error(`Error getting profile for session ${sessionId}: ${error}`);
+					return null;
+				}
+			} 
+		return null;
+    }
+	public handleRequest(sessionId:string, req: IncomingMessage, res: ServerResponse) {
 		const routeTable = [
 			{
 				route: glob("/modsync/version"),
@@ -235,7 +261,7 @@ export class Router {
 			},
 			{
 				route: glob("/modsync/whitelist/**"),
-				handler: this.getWhiteList.bind(this),
+				handler: (req: IncomingMessage, res: ServerResponse, matches: RegExpMatchArray, params: URLSearchParams) => this.getWhiteList(req, res, matches, params, sessionId),
 			},
 			{
 				route: glob("/modsync/hashes"),

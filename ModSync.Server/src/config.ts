@@ -72,7 +72,7 @@ const DEFAULT_CONFIG = `{
 		"**/*:Zone.Identifier"
 	],
 	"whiteList": [
-		// default is empty
+		"default",
 	]
 }`;
 

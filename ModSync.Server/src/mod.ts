@@ -12,6 +12,8 @@ import { SyncUtil } from "./sync";
 import { Router } from "./router";
 import type { PreSptModLoader } from "@spt/loaders/PreSptModLoader";
 import type { HttpServerHelper } from "@spt/helpers/HttpServerHelper";
+import { DatabaseServer } from "@spt/servers/DatabaseServer";
+import { ProfileHelper } from "@spt/helpers/ProfileHelper";
 
 class Mod implements IPreSptLoadMod {
 	private static container: DependencyContainer;
@@ -25,10 +27,17 @@ class Mod implements IPreSptLoadMod {
 		const vfs = container.resolve<VFS>("VFS");
 		const jsonUtil = container.resolve<JsonUtil>("JsonUtil");
 		const modImporter = container.resolve<PreSptModLoader>("PreSptModLoader");
+		const databaseServer = container.resolve<DatabaseServer>("DatabaseServer");
 		const configUtil = new ConfigUtil(vfs, jsonUtil, modImporter, logger);
 		const httpListenerService = container.resolve<HttpListenerModService>(
 			"HttpListenerModService",
 		);
+
+		//移动一个文件夹到default plugins中，作为默认插件
+		if(!vfs.exists("DefaultPlugins")){
+			vfs.mkdir("DefaultPlugins");
+			vfs.copyDir("BepInEx/plugins","DefaultPlugins/plugins");
+		}
 
 		httpListenerService.registerHttpListener(
 			"ModSyncListener",
@@ -60,7 +69,7 @@ class Mod implements IPreSptLoadMod {
 	}
 
 	public async handleOverride(
-		_sessionId: string,
+		sessionId: string,
 		req: IncomingMessage,
 		res: ServerResponse,
 	): Promise<void> {
@@ -71,6 +80,7 @@ class Mod implements IPreSptLoadMod {
 			Mod.container.resolve<HttpServerHelper>("HttpServerHelper");
 		const modImporter =
 			Mod.container.resolve<PreSptModLoader>("PreSptModLoader");
+		const profileHelper = Mod.container.resolve<ProfileHelper>("ProfileHelper");
 		const syncUtil = new SyncUtil(vfs, Mod.config, logger);
 		const router = new Router(
 			Mod.config,
@@ -80,10 +90,11 @@ class Mod implements IPreSptLoadMod {
 			httpServerHelper,
 			modImporter,
 			logger,
+			profileHelper
 		);
 
 		try {
-			router.handleRequest(req, res);
+			router.handleRequest(sessionId, req, res);
 		} catch (e) {
 			logger.error("Corter-ModSync: Failed to handle request!");
 			throw e;
