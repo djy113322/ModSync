@@ -69,7 +69,7 @@ export class Router {
 		private httpServerHelper: HttpServerHelper,
 		private modImporter: PreSptModLoader,
 		private logger: ILogger,
-		private profileHelper?: ProfileHelper // 添加 ProfileHelper
+		private profileHelper: ProfileHelper // 添加 ProfileHelper
 	) { }
 
 	/**
@@ -80,6 +80,7 @@ export class Router {
 		res: ServerResponse,
 		_: RegExpMatchArray,
 		_params: URLSearchParams,
+		_sessionId: string
 	) {
 		const modPath = this.modImporter.getModPath("Corter-ModSync");
 		const packageJson = JSON.parse(
@@ -133,22 +134,11 @@ export class Router {
 		res: ServerResponse,
 		_: RegExpMatchArray,
 		_params: URLSearchParams,
+		_sessionId: string
 	) {
 		res.setHeader("Content-Type", "application/json");
 		res.writeHead(200, "OK");
 		res.end(JSON.stringify(this.config.exclusions));
-	}
-
-	public async getWhiteList(
-		_req: IncomingMessage, 
-		res: ServerResponse, 
-		_: RegExpMatchArray, 
-		_params: URLSearchParams,
-		sessionId: string	
-	) {
-		res.setHeader("Content-Type", "application/json");
-		res.writeHead(200, "OK");
-		res.end(JSON.stringify(this.config.whiteList));
 	}
 
 	/**
@@ -159,6 +149,7 @@ export class Router {
 		res: ServerResponse,
 		_: RegExpMatchArray,
 		params: URLSearchParams,
+		sessionId: string
 	) {
 		const version = req.headers["modsync-version"] as string;
 		if (version in FALLBACK_HASHES) {
@@ -168,6 +159,12 @@ export class Router {
 			return;
 		}
 
+		// 获取用户名或 profile_id
+		// const SessionId = req.headers["SessionId"] as string;
+		// this.logger.info(`Corter-ModSync: getting profile for session ${sessionId} in get hashes func`);
+		const userName = await this.getProfileName(sessionId);
+		
+		this.logger.info(`Corter-ModSync: username is ${userName}`)
 		let pathsToHash = this.config.syncPaths;
 		if (params.has("path")) {
 			pathsToHash = this.config.syncPaths.filter(
@@ -176,7 +173,34 @@ export class Router {
 			);
 		}
 
-		const hashes = await this.syncUtil.hashModFiles(pathsToHash);
+		// 基于用户特定路径哈希文件
+		let hashes;
+		if (userName) {
+			// this.logger.info(`Corter-ModSync: Enter the hash user name path`);
+			// this.logger.info(`Corter-ModSync: username is ${userName}`)
+			// 检查用户目录是否存在
+			const userPluginDir = path.join("RemotePlugins", userName);
+			if (!this.vfs.exists(userPluginDir)) {
+				// 创建用户目录
+				this.vfs.createDirAsync(userPluginDir);
+				
+				// 复制默认插件到用户目录
+				if (this.vfs.exists("RemotePlugins/DefaultPlugins")) {
+					this.vfs.copyDir("RemotePlugins/DefaultPlugins", userPluginDir);
+					this.logger.info(`Created user plugin directory for ${userName}`);
+				}
+			}
+
+			// 修改 hashModFiles 方法以支持用户特定路径，或创建一个新的版本
+			hashes = await this.syncUtil.hashModFilesForUser(pathsToHash, userName);
+		} else {
+			this.logger.info(`Corter-ModSync: Enter the hash default path`);
+			// 使用原始哈希方法
+			hashes = await this.syncUtil.hashModFiles(pathsToHash);
+			this.logger.warning(
+				`Corter-ModSync: hash unknown username file`,
+			);
+		}
 
 		res.setHeader("Content-Type", "application/json");
 		res.writeHead(200, "OK");
@@ -187,22 +211,63 @@ export class Router {
 	 * @internal
 	 */
 	public async fetchModFile(
-		_: IncomingMessage,
+		req: IncomingMessage,
 		res: ServerResponse,
 		matches: RegExpMatchArray,
 		_params: URLSearchParams,
+		sessionId: string
 	) {
 		const filePath = decodeURIComponent(matches[1]);
+		
+		// 获取用户名或 profile_id
+		// const SessionId = req.headers["SessionId"] as string;
 
+		//TODO: 将路径替换为带有RemotePlugins的目录
+		// this.logger.info(`Corter-ModSync: getting profile for session ${sessionId} in fetch files func`);
+		const userName = await this.getProfileName(sessionId);
+		// 用于存储实际将要发送的文件路径
+		let actualFilePath = filePath;
+		
+		// 检查是否为 BepInEx 路径，这些是我们想要个性化的
+		if (filePath.startsWith("BepInEx/")) {
+			if (userName) {
+				// 用户特定目录路径
+				const userPluginDir = path.join("RemotePlugins", userName);
+				
+				// 检查用户目录是否存在
+				if (!this.vfs.exists(userPluginDir)) {
+					// 创建用户目录
+					this.vfs.createDir(userPluginDir);
+					
+					// 复制默认插件到用户目录
+					if (this.vfs.exists("RemotePlugins/DefaultPlugins")) {
+						this.vfs.copyDir("RemotePlugins/DefaultPlugins", userPluginDir);
+						this.logger.info(`Created user plugin directory for ${userName}`);
+					}
+				}
+				
+				// 构建用户特定的文件路径
+				const userFilePath = path.join(userPluginDir, filePath);
+				
+				// 如果用户特定文件存在，使用它，否则使用默认路径
+				if (this.vfs.exists(userFilePath)) {
+					actualFilePath = userFilePath;
+					this.logger.debug(`Using user-specific file: ${userFilePath}`);
+				}
+			}
+		}
+
+		// 安全检查路径
 		const sanitizedPath = this.syncUtil.sanitizeDownloadPath(
-			filePath,
+			actualFilePath,
 			this.config.syncPaths,
+			userName,
 		);
 
 		if (!this.vfs.exists(sanitizedPath))
 			throw new HttpError(
 				404,
-				`Attempt to access non-existent path ${filePath}`,
+				`Attempt to access non-existent path ${filePath}`
 			);
 
 		try {
@@ -211,14 +276,14 @@ export class Router {
 			res.setHeader(
 				"Content-Type",
 				this.httpServerHelper.getMimeText(path.extname(filePath)) ||
-				"text/plain",
+				"text/plain"
 			);
 			res.setHeader("Content-Length", fileStats.size);
 			return this.httpFileUtil.sendFileAsync(res, sanitizedPath);
 		} catch (e) {
 			throw new HttpError(
 				500,
-				`Corter-ModSync: Error reading '${filePath}'\n${e}`,
+				`Corter-ModSync: Error reading '${filePath}'\n${e}`
 			);
 		}
 	}
@@ -227,10 +292,11 @@ export class Router {
      * 根据session获取用户档案名称
      */
     private async getProfileName(sessionId: string): Promise<string | null> {
-		if (this.profileHelper && sessionId)
-			{
+		if (sessionId)
+		{
 				try
 				{
+					// this.logger.info(`Corter-ModSync: getting profile for session ${sessionId}`);
 					const profile = this.profileHelper.getPmcProfile(sessionId);
 					if(profile)
 					{
@@ -242,10 +308,13 @@ export class Router {
 					this.logger.error(`Error getting profile for session ${sessionId}: ${error}`);
 					return null;
 				}
-			} 
+		}
+		else {
+			this.logger.error(`Corter-ModSync: can not get profile for session ${sessionId}`);
+		}
 		return null;
     }
-	public handleRequest(sessionId:string, req: IncomingMessage, res: ServerResponse) {
+	public handleRequest(sessionId: string, req: IncomingMessage, res: ServerResponse) {
 		const routeTable = [
 			{
 				route: glob("/modsync/version"),
@@ -260,16 +329,14 @@ export class Router {
 				handler: this.getExclusions.bind(this),
 			},
 			{
-				route: glob("/modsync/whitelist/**"),
-				handler: (req: IncomingMessage, res: ServerResponse, matches: RegExpMatchArray, params: URLSearchParams) => this.getWhiteList(req, res, matches, params, sessionId),
-			},
-			{
 				route: glob("/modsync/hashes"),
-				handler: this.getHashes.bind(this),
+				handler: (req: IncomingMessage, res: ServerResponse, matches: RegExpMatchArray, params: URLSearchParams) => 
+					this.getHashes(req, res, matches, params, sessionId),
 			},
 			{
 				route: glob("/modsync/fetch/**"),
-				handler: this.fetchModFile.bind(this),
+				handler: (req: IncomingMessage, res: ServerResponse, matches: RegExpMatchArray, params: URLSearchParams) => 
+					this.fetchModFile(req, res, matches, params, sessionId),
 			},
 		];
 
@@ -278,7 +345,7 @@ export class Router {
 		try {
 			for (const { route, handler } of routeTable) {
 				const matches = route.exec(url.pathname);
-				if (matches) return handler(req, res, matches, url.searchParams);
+				if (matches) return handler(req, res, matches, url.searchParams, sessionId);
 			}
 
 			throw new HttpError(404, "Corter-ModSync: Unknown route");

@@ -33,10 +33,21 @@ class Mod implements IPreSptLoadMod {
 			"HttpListenerModService",
 		);
 
-		//移动一个文件夹到default plugins中，作为默认插件
-		if(!vfs.exists("DefaultPlugins")){
-			vfs.mkdir("DefaultPlugins");
-			vfs.copyDir("BepInEx/plugins","DefaultPlugins/plugins");
+		// 确保 RemotePlugins 目录结构存在
+		if (!vfs.exists("RemotePlugins")) {
+			vfs.createDirAsync("RemotePlugins");
+			
+			// 创建 DefaultPlugins 目录
+			vfs.createDirAsync("RemotePlugins/DefaultPlugins");
+			
+			// 复制 BepInEx 到 DefaultPlugins
+			if (vfs.exists("BepInEx")) {
+				vfs.copyDir("BepInEx", "RemotePlugins/DefaultPlugins/BepInEx");
+				logger.info("Created DefaultPlugins with BepInEx content");
+			} else {
+				Mod.loadFailed = true;
+				logger.error("Custom Corter-ModSync: BepInEx File is not exist");
+			}
 		}
 
 		httpListenerService.registerHttpListener(
@@ -47,6 +58,12 @@ class Mod implements IPreSptLoadMod {
 
 		try {
 			Mod.config = await configUtil.load();
+			logger.info(`first config name is ${Mod.config.syncPaths.at(0)?.name}, first config enforced is ${Mod.config.syncPaths.at(0)?.enforced}`);
+			logger.info(`first config name is ${Mod.config.syncPaths.at(1)?.name}, first config enforced is ${Mod.config.syncPaths.at(1)?.enforced}`);
+			logger.info(`first config name is ${Mod.config.syncPaths.at(2)?.name}, first config enforced is ${Mod.config.syncPaths.at(2)?.enforced}`);
+			logger.info(`first config name is ${Mod.config.syncPaths.at(3)?.name}, first config enforced is ${Mod.config.syncPaths.at(3)?.enforced}`);
+			logger.info(`first config name is ${Mod.config.syncPaths.at(4)?.name}, first config enforced is ${Mod.config.syncPaths.at(4)?.enforced}`);
+			logger.info(`first config name is ${Mod.config.syncPaths.at(5)?.name}, first config enforced is ${Mod.config.syncPaths.at(5)?.enforced}`);
 		} catch (e) {
 			Mod.loadFailed = true;
 			logger.error("Corter-ModSync: Failed to load config!");
@@ -80,7 +97,13 @@ class Mod implements IPreSptLoadMod {
 			Mod.container.resolve<HttpServerHelper>("HttpServerHelper");
 		const modImporter =
 			Mod.container.resolve<PreSptModLoader>("PreSptModLoader");
+		
 		const profileHelper = Mod.container.resolve<ProfileHelper>("ProfileHelper");
+		logger.info(`Corter-ModSync: sessionID in handleOverride is ${sessionId}.`);
+		const profile = profileHelper.getPmcProfile(sessionId);
+		if (profile) {
+			logger.info(`Corter-ModSync: username is ${profile.Info.Nickname}.`);
+		}
 		const syncUtil = new SyncUtil(vfs, Mod.config, logger);
 		const router = new Router(
 			Mod.config,

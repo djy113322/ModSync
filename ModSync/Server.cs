@@ -12,15 +12,26 @@ using SPT.Common.Utils;
 namespace ModSync;
 
 using SyncPathModFiles = Dictionary<string, Dictionary<string, ModFile>>;
+using System.Net;
 
 public class Server(Version pluginVersion)
 {
     private async Task<string> GetJson(string path)
     {
         try
-        {
-            using var client = new HttpClient();
+        {         
+
+            // 先创建handler并配置Cookie
+            var handler = new HttpClientHandler();
+            handler.CookieContainer = new CookieContainer();
+        
+            // 添加PHPSESSID cookie
+            handler.CookieContainer.Add(new Uri(RequestHandler.Host), 
+            new Cookie("PHPSESSID", RequestHandler.SessionId));
+
+            using var client = new HttpClient(handler);
             client.DefaultRequestHeaders.Add("modsync-version", pluginVersion.ToString());
+            // client.DefaultRequestHeaders.Add("Cookie", $"PHPSESSID={RequestHandler.SessionId}");
             client.Timeout = TimeSpan.FromMinutes(5);
             var json = await client.GetStringAsync($"{RequestHandler.Host}{path}");
             return json;
@@ -47,7 +58,15 @@ public class Server(Version pluginVersion)
         {
             try
             {
-                using var client = new HttpClient();
+                // 先创建handler并配置Cookie
+                var handler = new HttpClientHandler();
+                handler.CookieContainer = new CookieContainer();
+        
+                // 添加PHPSESSID cookie
+                handler.CookieContainer.Add(new Uri(RequestHandler.Host), 
+                new Cookie("PHPSESSID", RequestHandler.SessionId));
+
+                using var client = new HttpClient(handler);
                 if (retryCount > 0)
                     client.Timeout = TimeSpan.FromMinutes(10);
                 using var responseStream = await client.GetStreamAsync($"{RequestHandler.Host}/modsync/fetch/{file}");
@@ -82,6 +101,7 @@ public class Server(Version pluginVersion)
 
     public async Task<string> GetModSyncVersion()
     {
+        // Plugin.Logger.LogError($"There was a sessionId: {RequestHandler.SessionId}");
         return Json.Deserialize<string>(await GetJson("/modsync/version"));
     }
 
@@ -93,10 +113,6 @@ public class Server(Version pluginVersion)
     public async Task<List<string>> GetModSyncExclusions()
     {
         return Json.Deserialize<List<string>>(await GetJson("/modsync/exclusions"));
-    }
-
-    public async Task<List<string>> GetModWhiteList(){
-        return Json.Deserialize<List<string>>(await GetJson("/modsync/whitelist"));
     }
 
     public async Task<SyncPathModFiles> GetRemoteModFileHashes(List<SyncPath> syncPaths)

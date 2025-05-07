@@ -31,7 +31,6 @@ public class Plugin : BaseUnityPlugin
     private static readonly string LOCAL_HASHES_PATH = Path.Combine(MODSYNC_DIR, "LocalHashes.json");
     private static readonly string REMOVED_FILES_PATH = Path.Combine(MODSYNC_DIR, "RemovedFiles.json");
     private static readonly string LOCAL_EXCLUSIONS_PATH = Path.Combine(MODSYNC_DIR, "Exclusions.json");
-    private static readonly string LOCAL_WHITELIST_PATH = Path.Combine(MODSYNC_DIR, "Whitelist.json");
     private static readonly string UPDATER_PATH = Path.Combine(Directory.GetCurrentDirectory(), "ModSync.Updater.exe");
 
     private static readonly List<string> DEDICATED_DEFAULT_EXCLUSIONS =
@@ -125,9 +124,7 @@ public class Plugin : BaseUnityPlugin
         Logger.LogInfo($"- {addedFiles.SelectMany(path => path.Value).Count()} added");
         Logger.LogInfo($"- {updatedFiles.SelectMany(path => path.Value).Count()} updated");
         if (removedFiles.Count > 0)
-        {
             Logger.LogInfo($"- {removedFiles.SelectMany(path => path.Value).Count()} removed");
-        }
 
         if (UpdateCount > 0)
         {
@@ -319,7 +316,7 @@ public class Plugin : BaseUnityPlugin
         try
         {
             var version = versionTask.Result;
-
+            
             Logger.LogInfo($"ModSync found server version: {version}");
             if (version != Info.Metadata.Version.ToString())
                 Logger.LogWarning($"ModSync server version does not match plugin version. Found server version: {version}. Plugin may not work as expected!");
@@ -477,20 +474,6 @@ public class Plugin : BaseUnityPlugin
 
         VFS.WriteTextFile(LOCAL_HASHES_PATH, Json.Serialize(localModFiles));
 
-        Logger.LogDebug("Loading Whitelist");
-        List<string> modWhiteList;
-        var WhiteListTask = server.GetModWhiteList();
-        yield return new WaitUntil(() => WhiteListTask.IsCompleted);
-        try{
-            modWhiteList = WhiteListTask.Result;
-        }
-        catch (Exception e) {
-            Logger.LogError(e);
-            Chainloader.DependencyErrors.Add($"Could not load {Info.Metadata.Name} due to error ruquesting whiteList. Please ensure the server mod is properly installed and try again.");
-            yield break;
-        } 
-        yield return new WaitUntil(() => Singleton<CommonUI>.Instantiated);
-
         Logger.LogDebug("Fetching remote file hashes");
         var remoteHashesTask = server.GetRemoteModFileHashes(EnabledSyncPaths);
         yield return new WaitUntil(() => remoteHashesTask.IsCompleted);
@@ -540,7 +523,6 @@ public class Plugin : BaseUnityPlugin
     private readonly UpdateWindow updateWindow = new("Installed mods do not match server", "Would you like to update?");
     private readonly ProgressWindow progressWindow = new("Downloading Updates...", "Your game will need to be restarted\nafter update completes.");
     private readonly AlertWindow restartWindow = new(new Vector2(480f, 200f), "Update Complete.", "Please restart your game to continue.");
-    private readonly AlertWindow detectErrorWindow = new(new Vector2(480f, 200f), "Detect Error!", "Please check your BepInEx floder or contact your server owner.", "Quit.");
     private readonly AlertWindow downloadErrorWindow = new(
         new Vector2(640f, 240f),
         "Download failed!",

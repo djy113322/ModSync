@@ -5,6 +5,7 @@ import type { VFS } from "@spt/utils/VFS";
 import { glob } from "./utility/glob";
 import { unixPath } from "./utility/misc";
 import type { ILogger } from "@spt/models/spt/utils/ILogger";
+import { sync } from "glob";
 
 export type SyncPath = {
 	name?: string;
@@ -18,7 +19,6 @@ export type SyncPath = {
 type RawConfig = {
 	syncPaths: (string | SyncPath)[];
 	exclusions: string[];
-	whiteList: string[];
 };
 
 const DEFAULT_CONFIG = `{
@@ -70,9 +70,6 @@ const DEFAULT_CONFIG = `{
 		"user/mods/**/*.js",
 		"user/mods/**/*.js.map",
 		"**/*:Zone.Identifier"
-	],
-	"whiteList": [
-		"default",
 	]
 }`;
 
@@ -81,13 +78,17 @@ export class Config {
 	constructor(
 		public syncPaths: Required<SyncPath>[],
 		public exclusions: string[],
-		public whiteList: string[],
 	) {
 		this._globs = exclusions.map(glob);
 	}
 
 	public isExcluded(filePath: string): boolean {
 		return this._globs.some((glob) => glob.test(unixPath(filePath)));
+	}
+
+	public isModExcluded(filePath: string, remotePathDir: string): boolean{
+		const exclusionsPath = path.relative(remotePathDir, filePath);
+		return this.isExcluded(exclusionsPath);
 	}
 }
 export class ConfigUtil {
@@ -201,7 +202,7 @@ export class ConfigUtil {
 	public async load(): Promise<Config> {
 		const rawConfig = await this.readConfigFile();
 		this.validateConfig(rawConfig);
-
+		
 		return new Config(
 			[
 				{
@@ -222,8 +223,8 @@ export class ConfigUtil {
 				},
 				...rawConfig.syncPaths
 					.map((syncPath) => ({
-						enabled: true,
-						enforced: false,
+						enabled: typeof syncPath === "string" ? true : syncPath.enabled === undefined ? true : syncPath.enabled,
+						enforced: typeof syncPath === "string" ? true : syncPath.enforced === undefined ? false : syncPath.enforced,
 						silent: false,
 						restartRequired: true,
 						name: typeof syncPath === "string" ? syncPath : syncPath.path,
@@ -232,7 +233,6 @@ export class ConfigUtil {
 					.sort((a, b) => b.path.length - a.path.length),
 			],
 			rawConfig.exclusions,
-			rawConfig.whiteList,
 		);
 	}
 }

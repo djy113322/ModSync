@@ -65,10 +65,58 @@ export class SyncUtil {
 		return files;
 	}
 
+	private async getModFilesInDir(baseDir: string, dir: string, remoteUserPath: string) : Promise<string[]> {
+		if (!this.vfs.exists(dir)) {
+			this.logger.warning(
+				`Corter-ModSync: Mod Directory '${dir}' does not exist, will be ignored.`,
+			);
+			return [];
+		}
+
+		const stats = await this.vfs.statPromisify(dir);
+		if (stats.isFile()) return [dir];
+
+		const files: string[] = [];
+		for (const fileName of this.vfs.getFiles(dir)) {
+			const file = path.join(dir, fileName);
+
+			if (this.config.isModExcluded(file, remoteUserPath)) {
+				this.logger.info(`excluded file is ${file}`);
+				continue;
+			}
+
+			files.push(file);
+		}
+
+		for (const dirName of this.vfs.getDirs(dir)) {
+			const subDir = path.join(dir, dirName);
+
+			if (this.config.isModExcluded(subDir, remoteUserPath)) continue;
+
+			const subFiles = await this.getFilesInDir(baseDir, subDir);
+			if (
+				this.vfs.getFiles(subDir).length === 0 &&
+				this.vfs.getDirs(subDir).length === 0
+			)
+				files.push(subDir);
+
+			files.push(...subFiles);
+		}
+
+		if (
+			stats.isDirectory() &&
+			this.vfs.getFiles(dir).length === 0 &&
+			this.vfs.getDirs(dir).length === 0
+		)
+			files.push(dir);
+
+		return files;
+	}
+
 	private async buildModFile(
 		file: string,
 		// biome-ignore lint/correctness/noEmptyPattern: <explanation>
-		{}: Required<SyncPath>,
+		_syncPath?: Required<SyncPath>,
 	): Promise<ModFile> {
 		const stats = await this.vfs.statPromisify(file);
 		if (stats.isDirectory()) return { hash: "", directory: true };
@@ -144,13 +192,14 @@ export class SyncUtil {
 	public sanitizeDownloadPath(
 		file: string,
 		syncPaths: Config["syncPaths"],
+		userName: string | null
 	): string {
 		const normalized = path.join(
 			path.normalize(file).replace(/^(\.\.(\/|\\|$))+/, ""),
 		);
 
 		for (const syncPath of syncPaths) {
-			const fullPath = path.join(process.cwd(), syncPath.path);
+			const fullPath = this.getDownloadPath(syncPath, userName);
 			if (!path.relative(fullPath, normalized).startsWith("..")) {
 				return normalized;
 			}
@@ -160,5 +209,57 @@ export class SyncUtil {
 			400,
 			`Corter-ModSync: Requested file '${file}' is not in an enabled sync path!`,
 		);
+	}
+
+	private getDownloadPath(
+		syncPath: Required<SyncPath>,
+		userName: string | null
+	): string {
+		if (userName) {
+			const userFilePath = path.join("RemotePlugins", userName, syncPath.path);
+			const fullPath = path.join(process.cwd(), userFilePath);
+			return fullPath;
+		} else {
+			const fullPath = path.join(process.cwd(), syncPath.path);
+			return fullPath;
+		}
+	}
+
+	public async hashModFilesForUser(
+		syncPaths: SyncPath[],
+		userName: string
+	): Promise<Record<string, Record<string, ModFile>>> {
+		const result: Record<string, Record<string, ModFile>> = {};
+
+		const processFiles = new Set<string>();
+
+		const startTime  = performance.now();
+
+		for (const syncPath of syncPaths) {
+			const remoteFileDir = path.join("RemotePlugins" , userName);
+			this.logger.info(`Coter-ModSync: server user remote path is ${remoteFileDir}`);
+			const remoteFilePath = path.join(remoteFileDir, syncPath.path);
+			const files = await this.getModFilesInDir(remoteFilePath, remoteFilePath, remoteFileDir);
+			const filesResult : Record<string, ModFile> = {};
+
+			for (const file of files) {
+				// 检查用户特定路径
+				const relativePath = path.relative(remoteFileDir, file);
+				if (processFiles.has(winPath(relativePath))) continue;
+
+				//buildModeFile函数hash的是服务端的文件
+				//fileResult里面装的是不带有remoteFileDir的路径
+				filesResult[winPath(relativePath)] = await this.buildModFile(file);
+
+				processFiles.add(winPath(relativePath))
+			}				
+			result[winPath(syncPath.path)] = filesResult;
+		}
+		
+		this.logger.info(
+			`Overwrite Corter-ModSync: Hashed ${processFiles.size} files in ${performance.now() - startTime}ms`,
+		);
+
+		return result;
 	}
 }

@@ -191,8 +191,6 @@ public static class Sync
         return new ModFile(hash);
     }
 
-    public static async Task<>
-
     public static void CompareModFiles(
         string basePath,
         List<SyncPath> syncPaths,
