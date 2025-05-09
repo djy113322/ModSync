@@ -48,6 +48,14 @@ class Mod implements IPreSptLoadMod {
 				Mod.loadFailed = true;
 				logger.error("Custom Corter-ModSync: BepInEx File is not exist");
 			}
+
+			if (vfs.exists("ModSync.Updater.exe")) {
+				vfs.copyFile("ModSync.Updater.exe", "RemotePlugins/DefaultPlugins/ModSync.Updater.exe");
+				logger.info("add mod sync exe file");
+			} else {
+				Mod.loadFailed = true;
+				logger.error("Custom Corter-ModSync: ModSync.Updater.exe File is not exist");
+			}
 		}
 
 		httpListenerService.registerHttpListener(
